@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name : mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_USERNAME: admin
+      MONGO_INITDB_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db #tạo volume cho mongo để lưu dữ liệu mongo kể cả khi container bị xóa
+    networks:
+      - my_network
+
+volumes:
+  mongodb_data:
+
+networks:
+  my_network:
+    driver: bridge
