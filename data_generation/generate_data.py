@@ -1,57 +1,41 @@
-import pandas as pd 
 from faker import Faker
-import numpy
-from pymongo import MongoClient
 import random
 import uuid
 from datetime import datetime, timedelta
+from bson import ObjectId
 
 fake =  Faker()
-client = MongoClient("mongodb://admin:password@localhost:27017/")
 
-db = client["sales_db"]
-customers_collection = db["customers"]
+years = [2017,2018,2019,2020,2021,2022,2023,2024,2025]  #create year for random
 
-years = [2017,2018,2019,2020,2021,2022,2023,2024,2025]
 def random_date():
     year = random.choice(years)
     start_date = datetime(year,1,1)
     end_date  = datetime(year,12,31,23,59,59)
-
     random_seconds = random.randint(0,int((end_date - start_date).total_seconds()))
+
     return start_date + timedelta(seconds=random_seconds)
 
-def random_null(value):
-    return value if random.random() > 0.15 else None
-
 def customers_gen():
-    number_customer = 5_00_000
-    customers = []
-    for i in range(number_customer):
-        customers.append({
+    customer = {
         "_id": str(uuid.uuid4()),
-        "customer_id" : f"CUST00{i}",
-        "customer_name" : fake.name(),
-        "email" : fake.email(),
-        "phone_number" : fake.phone_number(),
+        "customer_id" : str(ObjectId()),
+        "customer_name" : fake.name() if random.random() > 0.1 else None,
+        "email" : fake.email() if random.random() > 0.2 else None,
+        "phone_number" : fake.phone_number() if random.random() > 0.2 else None,
         "address" : {
-            "street": fake.street_address(),
-            "city" : fake.city(),
-            "zip_code": fake.zipcode()
-        },
+            "street": fake.street_address() if random.random() > 0.15 else None,
+            "city" : fake.city() if random.random() > 0.1 else None,
+            "zip_code": fake.zipcode() if random.random() > 0.1 else None
+            },
          "create_at" : random_date().strftime("%Y-%m-%d %H:%M:%S")
-    })
+        }
+    if customer["phone_number"] is None and customer["email"] is None:
+            customer["phone_number"] = fake.phone_number() 
 
-    customers_df = pd.DataFrame(customers)
-    columns = list(customers_df.columns)
-    for col in columns:
-        customers_df[col]=customers_df[col].apply(random_null)
-    customers_df.to_csv("./data_generation/customers.csv")
-    return customers
+    return customer
 
-customers = customers_gen()
 
-categories_collection = db["categories"]
 def categories_gen():
     categories = [
     {"_id": str(uuid.uuid4()),"category_id": "CAT001", "category_name" : "Fashion", "description" : "Thời trang"},
@@ -63,14 +47,10 @@ def categories_gen():
     {"_id": str(uuid.uuid4()),"category_id": "CAT007", "category_name" : "Appliances", "description" : "Thiết bị trong nhà"},
     {"_id": str(uuid.uuid4()),"category_id": "CAT008", "category_name" : "Toys", "description" : "Đồ chơi"},
     {"_id": str(uuid.uuid4()),"category_id": "CAT009", "category_name" : "Books", "description" : "Sách"}
-    ]
-    categories_df = pd.DataFrame(categories)
-    categories_df.to_csv("./data_generation/categories.csv")
+    ] 
     return categories
 
-categories = categories_gen()
 
-products_collection = db["products"]
 product_categories ={
     "Fashion":{
         "brands": ["Luis Vuiton","Dior","OWEN","CoolMate","CANIFA","Adidas","Puma","Nike","Zara","H&M"],
@@ -118,133 +98,88 @@ product_categories ={
         "prices":(1,100)
     }
 }
-def products_gen():
-    num_product = 50_000
-    products = []
-    for i in range(num_product):
-        category = random.choice(list(product_categories.keys()))
-        brand = random.choice(product_categories[category]["brands"])
-        product_name = random.choice(product_categories[category]["products"])
-        price = round(random.uniform(*product_categories[category]["prices"]), 2)
-        stock_quantity = random.randint(0,500)
-        rating = round(random.uniform(1.0,5.0),1)
-        create_at = random_date().strftime("%Y-%m-%d %H:%M:%S")
-        products.append(
-            {
+
+
+def products_gen(product_categories):
+    category = random.choice(list(product_categories.keys()))
+    brand = random.choice(product_categories[category]["brands"])
+    product_name = random.choice(product_categories[category]["products"])
+    price = round(random.uniform(*product_categories[category]["prices"]), 2)
+    stock_quantity = random.randint(0,500)
+    rating = round(random.uniform(1.0,5.0),1)
+    create_at = random_date().strftime("%Y-%m-%d %H:%M:%S")
+
+    product = {
                 "_id":str(uuid.uuid4()),
-                "product_id" : f"PRO00{i}",
+                "product_id" : str(ObjectId()),
                 "product_name": product_name,
-                "brand": brand,
+                "brand": brand if random.random() > 0.1 else None,
                 "category": category,
-                "price": price,
+                "description": fake.sentence() if random.random() > 0.1 else None,
+                "price": price if random.random() > 0.02 else None,
                 "stock_quantity":stock_quantity,
                 "rating": rating,
                 "create_at" : create_at
-            }
-        )
-    product_df = pd.DataFrame(products)
-    columns = list(product_df.columns)
-    for col in columns:
-        product_df[col] = product_df[col].apply(random_null)
-    product_df.to_csv("./data_generation/products.csv")
-    return products
-    
-products = products_gen()
+        }
+         
+    return product
 
-suppliers_collection = db["suppliers"]
-def suppliers_gen():
-    suppliers = []
-    categories = list(product_categories.keys())
-    brands = []
-    for key in categories:
-        brands += product_categories[key]["brands"]
-    for i in range(len(brands)):
-        suppliers.append({
+
+def suppliers_gen(brand):
+    supplier={
             "_id": str(uuid.uuid4()),
-            "supplier_id": f"SUP00{i}",
-            "name":brands[i],
+            "supplier_id": str(ObjectId()),
+            "name":brand,
             "contact_person": fake.name(),
-            "phone_number": fake.phone_number(),
+            "phone_number": fake.phone_number() if random.random() > 0.2 else None,
             "email": fake.email(),
             "address": fake.address()         
-        })
-    suppliers = pd.DataFrame(suppliers)
-    suppliers.to_csv("./data_generation/suppliers.csv")
-    return suppliers
+    }
 
-suppliers = suppliers_gen()
+    return supplier
 
-orders_collection = db["orders"]
-def orders_gen():
-    number_orders = 100_000_000
-    orders = []
-    for i in range(number_orders):
-        customer = random.choice(customers)
-        product = random.choices(products, k = random.randint(1,10))
-        create_at = random_date()
-        items = [{
+def orders_gen(customers,products):
+    customer = random.choice(customers)
+    product = random.choices(products, k = random.randint(1,10))
+    create_at = random_date().strftime("%Y-%m-%d %H:%m:%S")
+
+    items = [{
                 "product_id":item["product_id"],
                 "product_name":item["product_name"],
                 "quantity": (qty := random.randint(1,10)) ,
                 "price":item["price"],
-                "total_price": qty*item["price"]
-            } for item in product],
-        orders.append({
+                "total_price": qty*item["price"] if item["price"] is not None else 0
+            } for item in product]
+    
+    order = {
             "_id":str(uuid.uuid4()),
-            "order_id": f"ORD00{i}",
+            "order_id": str(ObjectId()),
             "customer_id": customer["customer_id"],
             "order_date":create_at,
             "status": random.choice(["Completed","Canceled"]),
             "items": items,
-            "total_amount": sum(item["total_price"] for item in items),
-            "payment_method": random.choice(["Credit Card","Debit Cart","Cash","E-wallets","PayPal","Bank Card"]),
-            "method": random.choice(["Expess","Buy in store"]), 
-        })
-    orders_df = pd.DataFrame(orders)
-    columes = list(orders_df.columns)
-    for col in columes:
-        orders_df[col] = orders_df[col].apply(random_null) 
-    orders_df.to_csv("./data_generation/orders.csv")
-    return orders
+            "total_amount": sum(item["total_price"] for item in items) if random.random() > 0.1 else None,
+            "payment_method": random.choice(["Credit Card","Debit Cart","Cash","E-wallets","PayPal","Bank Card"]) if random.random() > 0.1 else None,
+            "method": random.choice(["Expess","Buy in store"]) if random.random() > 0.2 else None, 
+            "delivery_date": create_at if random.random() > 0.1 else None
+        }
+    
+    return order
 
-orders = orders_gen()
 
-inventory_collection = db["inverntory"]
-def inventory_gen():
-    inventory = []
-    for i in range(int(len((products)))):
-        inventory.append({
+
+def inventory_gen(product):
+    inventory={
             "_id": str(uuid.uuid4()),
-            "inventory_id": f"INV00{i}",
-            "product_id" : products[i]["product_id"],
+            "inventory_id": str(ObjectId()),
+            "product_id" : product["product_id"],
             "quantity_available": random.randint(1,1000),
             "last_updated": random_date()
-        })
-    inventory_df = pd.DataFrame(inventory)
-    inventory_df.to_csv("./data_generation/inventory.csv")
+        }
+    
+    return inventory
 
-inventory_gen()
-
-payments_collection = db["payments"]
-def payments_gen():
-    payments = []
-    for i in range(1,len(orders)+1):
-            payments.append({
-                "_id":str(uuid.uuid4()),
-                "payment_id":f"PAY00{i}",
-                "order_id": orders[i]["order_id"],
-                "custiomer_id": orders[i]["customer_id"],
-                "amount": orders[i]["total_amount"],
-                "payment_date":orders[i]["order_date"],
-                "payment_method":orders[i]["payment_method"],
-                "status": orders[i]["status"]
-            })
-    payments_df = pd.DataFrame(payments)
-    payments_df.to_csv("./data_generation/payments.csv")
-
-payments_gen()
-
-employees_collection = db["employees"]
+    
 def employees_gen():
     positions = {
     "Sales": ["Sales Representative"] * 10 + ["Sales Manager"],  # 80% Employee, 20% Manager
@@ -254,24 +189,21 @@ def employees_gen():
     "Finance": ["Finance Analyst"] * 4 + ["Finance Manager"],  # 80% Employee
     "HR": ["HR Specialist"] * 4 + ["HR Manager"]  # 80% Employee
     }
-    
-    number_employees = 1000
-    employees = []
-    for i in range(1,number_employees + 1):
-        departments = random.choice(list(positions.keys()))
-        employees.append({
+
+    departments = random.choice(list(positions.keys()))
+
+    employee={
             "_id": str(uuid.uuid4()),
-            "employee_id": f"EMP00{i}",
+            "employee_id": str(ObjectId()),
             "employee_name": fake.name(),
-            "postition": random.choice[positions[departments]],
+            "postition": random.choice([positions[departments]]),
             "email": fake.email(),
             "phone_number": fake.phone_number(),
-            "hired_date": random_date()   
-        })
-    employees_df = pd.DataFrame(employees)
-    employees_df.to_csv("./datageneration/employees.csv")
-
-employees_gen()
+            "hired_date": random_date().strftime("%Y-%m-%d %H:%S")   
+        }
+    
+    return employee
+       
     
     
 
