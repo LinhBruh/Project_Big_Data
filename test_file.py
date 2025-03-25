@@ -1,4 +1,11 @@
-import data_generation.generate_data as gd
+collections = {
+    "customers" : ["customers"],
+    "categories" : ["categories"],
+    "products": ["products"],
+    "suppliers": ["suppliers"],
+    "orders" : ["orders"],
+    "inventory" : ["inventory"],
+    "employees": ["employees"]
+}
 
-customers = [gd.customers_gen() for _ in range(100_000)]
-
+print(list(collections.keys()))

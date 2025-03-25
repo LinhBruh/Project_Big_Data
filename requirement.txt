@@ -1,20 +1,26 @@
-+ Python library : pandas, pymongo, multiprocessing, random, uuid, faker, kafka-python, datetime, time, json, confluent-kafka
++First to run this project, please type this in the terminal : docker compose up -d
 
-+ Docker image: kafka, mongodb, kafka-ui, zookeeper
+
+
++ Python libraries: pandas, pymongo, multiprocessing, random, uuid, faker, datetime, time, json, confluent-kafka
+
++ Docker images: kafka, mongodb, kafka-ui, zookeeper
     Why use Docker? Some tools I used in this project not run in Window so I must use Docker to environments to run them and make sure you have changed the disk image location to a another disk have storage capacity is min 50gb
     If you want use mongodb in your computer not on Docker, you just need change the MongoClient
     After all, you need create topics in Kafka, you just open terminal in VSCODE or some terminal on your computer and copy paste this:
-        Kafka topics: 
-            docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic employees
-            docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic inventory
-            docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic suppliers
-            docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic orders
-            docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic products
-            docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic categories
-            docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic customers
-        Check topics have created:
-            docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --list
-        Some Note for Kafka: 
-            - In this project I use both kafka broker and kafka-ui for visualize the kafka broker and some topics of this broker, I need config the environments value of Kafka for suitable,
-            I used two port, one for Kafka on Docker and one for localhost on my computer, because Docker and local is not same
-        
+        - Kafka topics: 
+                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic employees
+                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic inventory
+                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic suppliers
+                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic orders
+                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic products
+                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic categories
+                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic customers
+            Check topics have created:
+                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --list or search localhost:8080 to connect kafka-ui which will show all information of kafka
+            Some Note for Kafka: 
+                    In this project I use both kafka broker and kafka-ui for visualize the kafka broker and some topics of this broker, I need config the environments value of Kafka for suitable,
+                I used two port, one for Kafka on Docker and one for localhost on my computer, because Docker and local is not same
+    
+        - MongoDB: Pay attention to password and user of mongo, I have create user admin:password but it not work, so I must create another user is admin:admin123 and it have good to run. And next,
+                    I think you need install MongoDB Compass to see the data easier
