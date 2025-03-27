@@ -1,8 +1,6 @@
 +First to run this project, please type this in the terminal : docker compose up -d
 
-
-
-+ Python libraries: pandas, pymongo, multiprocessing, random, uuid, faker, datetime, time, json, confluent-kafka
++ Python libraries: pandas, pymongo, multiprocessing, random, uuid, faker, datetime, time, json, confluent-kafka, pyspark
 
 + Docker images: kafka, mongodb, kafka-ui, zookeeper
     Why use Docker? Some tools I used in this project not run in Window so I must use Docker to environments to run them and make sure you have changed the disk image location to a another disk have storage capacity is min 50gb
@@ -24,3 +22,13 @@
     
         - MongoDB: Pay attention to password and user of mongo, I have create user admin:password but it not work, so I must create another user is admin:admin123 and it have good to run. And next,
                     I think you need install MongoDB Compass to see the data easier
+
+        - Hadoop HDFS : What is this? This is Hadoop Distributed File System, which is the distributed system help our work with big data easier and faster
+                + Hadoop Cluster:
+                        > Namenode : run and format HDFS
+                        > Datanode : store data in HDFS
+                        > Resourcemanager(YARN) : manage resource
+                        > Nodemanager : run tasks process data
+                        > Historyserver : store jobs have runned in YARN
+
+        - Spark : Framework process data very strong, work with Spark we will work with big data faster than Python or something tool process data we have usually use, example is SISS, Python pandas 
