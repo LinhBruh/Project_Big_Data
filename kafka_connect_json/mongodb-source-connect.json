@@ -1,0 +1,15 @@
+{
+    "name":"mongodb-source-connectỏ",
+    "config":{
+        "connector.class": "com.mongodb.kafka.connect.MongoSourceConnector",
+        "connection.uri":"mongodb://admin:password@localhost:27017/",
+        "database":"sales_db",
+        "collection": "",
+        "pipeline":  "[{\"$match\": {\"ns.coll\": {\"$in\": [\"orders\", \"customers\", \"products\"]}}}]",
+        "topic.prefix":"mongo_",
+        "poll.max.batch.size":1000,
+        "poll.await.time.ms":5000,
+        "batch.size":1000,
+        "change.stream.full.document": "updateLookup"
+    }
+}

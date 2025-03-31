@@ -1,8 +1,8 @@
 +First to run this project, please type this in the terminal : docker compose up -d
 
-+ Python libraries: pandas, pymongo, multiprocessing, random, uuid, faker, datetime, time, json, confluent-kafka, pyspark
++ Python libraries: pip install pandas pymongo multiprocessing random uuid faker datetime time json confluent-kafka pyspark
 
-+ Docker images: kafka, mongodb, kafka-ui, zookeeper
++ Docker images: kafka, mongodb, kafka-ui, zookeeper ,kafka-connect ,hdfs-namenode,hdfs-datanode            
     Why use Docker? Some tools I used in this project not run in Window so I must use Docker to environments to run them and make sure you have changed the disk image location to a another disk have storage capacity is min 50gb
     If you want use mongodb in your computer not on Docker, you just need change the MongoClient
     After all, you need create topics in Kafka, you just open terminal in VSCODE or some terminal on your computer and copy paste this:
@@ -26,9 +26,18 @@
         - Hadoop HDFS : What is this? This is Hadoop Distributed File System, which is the distributed system help our work with big data easier and faster
                 + Hadoop Cluster:
                         > Namenode : run and format HDFS
-                        > Datanode : store data in HDFS
+                        > Datanode : store data in HDFS, son's Namenode
                         > Resourcemanager(YARN) : manage resource
                         > Nodemanager : run tasks process data
                         > Historyserver : store jobs have runned in YARN
+        
+        - Kafka-connect: typing it in the terminal to install some Framework : docker exec -it kafka-connect bash
+                        + First, we need  have a connect to MongoDB: confluent-hub install mongodb/kafka-connect-mongodb:latest
+                        + Second, this is HDFS sink connector to recevice message from kafka to push in HDFS: confluent-hub install confluentinc/kafka-connect-hdfs:latest
+                        + Thirst,check the connector we have installing : ls /usr/share/confluent-hub-components/
+                        + Next, we need move file have type .jar to usr/local/share/kafka/plugins/  :   mv /usr/share/confluent-hub-components/mongodb-kafka-connect-mongodb/lib/* /usr/local/share/kafka/plugins/mongodb/
+                                                                                                        mv /usr/share/confluent-hub-components/confluentinc-kafka-connect-hdfs/lib/* /usr/local/share/kafka/plugins/hdfs/
+                        + End, comback the terminal of kafka-connect : docker exec -it kafka-connect bash
+                                . typing this : curl -sS http://localhost:8083/connector-plugins 
+                                . if you see : [{"class":"com.mongodb.kafka.connect.MongoSinkConnector","type":"sink","version":"1.15.0"},{"class":"io.confluent.connect.hdfs.HdfsSinkConnector","type":"sink","version":"10.2.12"},{"class":"com.mongodb.kafka.connect.MongoSourceConnector","type":"source","version":"1.15.0"},{"class":"io.confluent.connect.hdfs.tools.SchemaSourceConnector","type":"source","version":"7.8.2-ccs"}] we have done
 
-        - Spark : Framework process data very strong, work with Spark we will work with big data faster than Python or something tool process data we have usually use, example is SISS, Python pandas 

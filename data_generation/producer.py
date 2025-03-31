@@ -8,10 +8,10 @@ import uuid
 
 def create_producer():
     conf = {
-    "bootstrap.servers":"localhost:9093", #location Kafka broker
-    "linger.ms":100, #if have less messages, Kafka will wait 100ms to before sent messages(increase performance)
-    "client.id":"bigdata-producer", #create name client producer(help easier debug)
-    "batch.num.messages":1000 #send maximum 1000 messages for a batch
+        "bootstrap.servers":"localhost:9093", #location Kafka broker
+        "linger.ms":100, #if have less messages, Kafka will wait 100ms to before sent messages(increase performance)
+        "client.id":"bigdata-producer", #create name client producer(help easier debug)
+        "batch.num.messages":1000 #send maximum 1000 messages for a batch
     }
     return Producer(conf)
 
