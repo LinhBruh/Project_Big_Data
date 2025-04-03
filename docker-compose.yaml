@@ -107,14 +107,16 @@ services:
   mongodb:
     image: mongo:latest
     container_name: mongodb
-    restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_REPL_SET_NAME: rs0
+    command: --replSet rs0 --keyFile /data/keyfile/key_file --auth
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+      - mongodb_keyfile:/data/keyfile
     networks:
       - bigdata_network
 
@@ -164,6 +166,8 @@ services:
       - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9094,PLAINTEXT_HOST://0.0.0.0:9095
       - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
       - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+
     networks:
       - bigdata_network
 
@@ -186,7 +190,6 @@ services:
   kafka-connect:
     image: confluentinc/cp-kafka-connect:latest
     container_name: kafka-connect
-    restart: always
     depends_on: 
       - kafka2
     ports:
@@ -218,6 +221,7 @@ volumes:
   hadoop_datanode3:
   hadoop_historyserver:
   mongodb_data:
+  mongodb_keyfile:
 
 networks:
   bigdata_network:

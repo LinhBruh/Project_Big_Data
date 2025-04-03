@@ -1,8 +1,8 @@
 {
-    "name":"mongodb-source-connectỏ",
+    "name":"mongodb-source-connector",
     "config":{
         "connector.class": "com.mongodb.kafka.connect.MongoSourceConnector",
-        "connection.uri":"mongodb://admin:password@localhost:27017/",
+        "connection.uri":"mongodb://admin:password@mongodb:27017/",
         "database":"sales_db",
         "collection": "",
         "pipeline":  "[{\"$match\": {\"ns.coll\": {\"$in\": [\"orders\", \"customers\", \"products\"]}}}]",

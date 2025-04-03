@@ -7,13 +7,13 @@
     If you want use mongodb in your computer not on Docker, you just need change the MongoClient
     After all, you need create topics in Kafka, you just open terminal in VSCODE or some terminal on your computer and copy paste this:
         - Kafka topics: 
-                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic employees
-                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic inventory
-                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic suppliers
-                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic orders
-                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic products
-                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic categories
-                    docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic customers
+                    docker exec -it kafka1 /bin/kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic employees
+                    docker exec -it kafka1 /bin/kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic inventory
+                    docker exec -it kafka1 /bin/kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic suppliers
+                    docker exec -it kafka1 /bin/kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic orders
+                    docker exec -it kafka1 /bin/kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic products
+                    docker exec -it kafka1 /bin/kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic categories
+                    docker exec -it kafka1 /bin/kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists  --partitions 10 --replication-factor 1 --topic customers
             Check topics have created:
                     docker exec -it kafka /bin/kafka-topics --bootstrap-server kafka:9092 --list or search localhost:8080 to connect kafka-ui which will show all information of kafka
             Some Note for Kafka: 
@@ -32,12 +32,21 @@
                         > Historyserver : store jobs have runned in YARN
         
         - Kafka-connect: typing it in the terminal to install some Framework : docker exec -it kafka-connect bash
-                        + First, we need  have a connect to MongoDB: confluent-hub install mongodb/kafka-connect-mongodb:latest
+                        + First, we need  have a connect to MongoDB: confluent-hub install mongodb/kafka-connect-mongodb:latest and create three topics : connect-config, connect-offsets, connect-status on kafka2
                         + Second, this is HDFS sink connector to recevice message from kafka to push in HDFS: confluent-hub install confluentinc/kafka-connect-hdfs:latest
                         + Thirst,check the connector we have installing : ls /usr/share/confluent-hub-components/
                         + Next, we need move file have type .jar to usr/local/share/kafka/plugins/  :   mv /usr/share/confluent-hub-components/mongodb-kafka-connect-mongodb/lib/* /usr/local/share/kafka/plugins/mongodb/
                                                                                                         mv /usr/share/confluent-hub-components/confluentinc-kafka-connect-hdfs/lib/* /usr/local/share/kafka/plugins/hdfs/
-                        + End, comback the terminal of kafka-connect : docker exec -it kafka-connect bash
+                        + Next, comback the terminal of kafka-connect : docker exec -it kafka-connect bash
                                 . typing this : curl -sS http://localhost:8083/connector-plugins 
                                 . if you see : [{"class":"com.mongodb.kafka.connect.MongoSinkConnector","type":"sink","version":"1.15.0"},{"class":"io.confluent.connect.hdfs.HdfsSinkConnector","type":"sink","version":"10.2.12"},{"class":"com.mongodb.kafka.connect.MongoSourceConnector","type":"source","version":"1.15.0"},{"class":"io.confluent.connect.hdfs.tools.SchemaSourceConnector","type":"source","version":"7.8.2-ccs"}] we have done
 
+                        + Some thing went wrong here, but I found it, kafka-connect need cleanup.policy=compact so we need change it:
+                                        docker exec -it kafka2 /bin/kafka-configs --bootstrap-server kafka2:9094 --alter --topic connect-offsets --add-config cleanup.policy=compact   
+                                        docker exec -it kafka2 /bin/kafka-configs --bootstrap-server kafka2:9094 --alter --topic connect-status --add-config cleanup.policy=compact 
+                                        docker exec -it kafka2 /bin/kafka-configs --bootstrap-server kafka2:9094 --alter --topic connect-configs --add-config cleanup.policy=compact
+                        
+                        + Next, we need install connect to connectors of kafka-connect:
+                                curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d@mongodb-source-connect.json
+                                curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d@hdfs-sink-connect.json
+                        
