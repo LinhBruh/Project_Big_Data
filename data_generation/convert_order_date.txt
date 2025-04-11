@@ -1,0 +1,22 @@
+FIRST, we need converting the order_date to ISODate of MongoDB to process quickly, because in normal, order_date is string so its very not quickly
+
+you need enter the mongosh on docker or mongosh on Mongo Compass and copy paste this to the bash shells
+
+const bulkOps = [];
+db.orders.find().forEach(doc => {
+    bulkOps.push({
+        updateOne: {
+            filter: { _id: doc._id },
+            update: { $set: { order_date: new Date(doc.order_date) } }
+        }
+    });
+
+    // Thực hiện mỗi 1000 bản ghi một lần
+    if (bulkOps.length === 1000) {
+        db.orders.bulkWrite(bulkOps);
+        bulkOps.length = 0;
+    }
+});
+if (bulkOps.length > 0) {
+    db.orders.bulkWrite(bulkOps);
+}

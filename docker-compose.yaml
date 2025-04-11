@@ -66,12 +66,10 @@ services:
     networks:
       - bigdata_network
 
-  resourcemanager:
-    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
-    container_name: resourcemanager
+  nodemanager:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: nodemanager
     restart: always
-    ports:
-      - "8088:8088"
     environment:
       SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode1:9864 datanode2:9865 datanode3:9866"
     env_file:
@@ -79,29 +77,6 @@ services:
     networks:
       - bigdata_network
 
-  nodemanager:
-    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
-    container_name: nodemanager
-    restart: always
-    environment:
-      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode1:9864 datanode2:9865 datanode3:9866 resourcemanager:8088 historyserver:8188"
-    env_file:
-      - ./hadoop.env
-    networks:
-      - bigdata_network
-
-  historyserver:
-    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
-    container_name: historyserver
-    restart: always
-    environment:
-      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode1:9864 datanode2:9865 datanode3:9866 resourcemanager:8088"
-    volumes:
-      - hadoop_historyserver:/hadoop/yarn/timeline
-    env_file:
-      - ./hadoop.env
-    networks:
-      - bigdata_network
 
   # ------------------ MONGODB ------------------
   mongodb:
@@ -110,13 +85,10 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_REPL_SET_NAME: rs0
-    command: --replSet rs0 --keyFile /data/keyfile/key_file --auth
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-      - mongodb_keyfile:/data/keyfile
     networks:
       - bigdata_network
 
@@ -186,31 +158,136 @@ services:
       - kafka2
     networks:
       - bigdata_network
-  
-  kafka-connect:
-    image: confluentinc/cp-kafka-connect:latest
-    container_name: kafka-connect
-    depends_on: 
-      - kafka2
-    ports:
-      - "8083:8083"
+
+  #-----------------SPARK----------------------------
+  spark-master:
+    build: 
+      context: .
+      dockerfile: Dockerfile.spark
+    image: spark
+    container_name: spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host spark-master --port 7077 --webui-port 8081
     environment:
-      - CONNECT_BOOTSTRAP_SERVERS=kafka2:9094
-      - CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect
-      - CONNECT_GROUP_ID=kafka-connect-group
-      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.storage.StringConverter
-      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
-      - CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE=false
-      - CONNECT_CONFIG_STORAGE_TOPIC=connect-configs
-      - CONNECT_OFFSET_STORAGE_TOPIC=connect-offsets
-      - CONNECT_STATUS_STORAGE_TOPIC=connect-status
-      - CONNECT_REST_PORT=8083
-      - CONNECT_PLUGIN_PATH=/usr/share/java,/usr/local/share/kafka/plugins
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+    ports:
+      - "8081:8081"
+      - "7077:7077"
     networks:
       - bigdata_network
     volumes:
-      - ./plugins:/usr/local/share/kafka/plugins
+      - ./scripts:/opt/spark-apps
+  
+  spark-worker-1:
+    build: 
+      context: .
+      dockerfile: Dockerfile.spark
+    image: spark
+    container_name: spark-worker-1
+    ports:
+      - "8082:8082"
+    depends_on:
+      - spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077 --webui-port 8082
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_WORKER_MEMORY=4G
+      - SPARK_WORKER_CORES=2
+      - SPARK_LOCAL_DIRS=/tmp/spark-disk
+    volumes:
+      - ./spark-data-worker/spark-worker1-data:/tmp/spark-disk
+    networks:
+      - bigdata_network
+
+  spark-worker-2:
+    build: 
+      context: .
+      dockerfile: Dockerfile.spark
+    image: spark
+    container_name: spark-worker-2
+    depends_on:
+      - spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment:
+      - SPARK_WORKER_MEMORY=4G
+      - SPARK_WORKER_CORES=2
+      - SPARK_MODE=worker
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_LOCAL_DIRS=/tmp/spark-disk
+    volumes:
+      - ./spark-data-worker/spark-worker2-data:/tmp/spark-disk
+    networks:
+      - bigdata_network
     
+  spark-worker-3:
+    build: 
+      context: .
+      dockerfile: Dockerfile.spark
+    image: spark
+    container_name: spark-worker-3
+    depends_on:
+      - spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment:
+      - SPARK_WORKER_MEMORY=4G
+      - SPARK_WORKER_CORES=2
+      - SPARK_MODE=worker
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_LOCAL_DIRS=/tmp/spark-disk
+    volumes:
+      - ./spark-data-worker/spark-worker3-data:/tmp/spark-disk
+    networks:
+      - bigdata_network
+    
+#------------AIRFLOW--------------------
+  airflow-postgres:
+    image: postgres:13
+    container_name: airflow-postgres
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bigdata_network
+  
+  airflow-webserver:
+    image: apache/airflow:latest
+    container_name: airflow-webserver
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=JV7dwyp4t-0t_Pe2H7Hy8tPldwPztCg0jiISJAoNVEU=
+    ports:
+      - "8085:8085"
+    volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    depends_on:
+      - airflow-postgres
+    networks:
+      - bigdata_network
+    command: bash -c "airflow db init && airflow webserver -p 8085"
+  
+  airflow-scheduler:
+    image: apache/airflow:latest
+    container_name: airflow_scheduler
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=JV7dwyp4t-0t_Pe2H7Hy8tPldwPztCg0jiISJAoNVEU=
+    depends_on:
+      - airflow-postgres
+    volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    networks:
+      - bigdata_network
+    command: scheduler
 
 
 
@@ -221,7 +298,7 @@ volumes:
   hadoop_datanode3:
   hadoop_historyserver:
   mongodb_data:
-  mongodb_keyfile:
+  postgres_data:
 
 networks:
   bigdata_network:

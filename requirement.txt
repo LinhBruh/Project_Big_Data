@@ -1,8 +1,8 @@
 +First to run this project, please type this in the terminal : docker compose up -d
 
-+ Python libraries: pip install pandas pymongo multiprocessing random uuid faker datetime time json confluent-kafka pyspark
++ Python libraries: pip install pandas pymongo multiprocessing random uuid faker datetime time json confluent-kafka pyspark findspark
 
-+ Docker images: kafka, mongodb, kafka-ui, zookeeper ,kafka-connect ,hdfs-namenode,hdfs-datanode            
++ Docker images: kafka, mongodb, kafka-ui, zookeeper ,hdfs-namenode,hdfs-datanode, airflow , spark       
     Why use Docker? Some tools I used in this project not run in Window so I must use Docker to environments to run them and make sure you have changed the disk image location to a another disk have storage capacity is min 50gb
     If you want use mongodb in your computer not on Docker, you just need change the MongoClient
     After all, you need create topics in Kafka, you just open terminal in VSCODE or some terminal on your computer and copy paste this:
@@ -50,3 +50,12 @@
                                 curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d@mongodb-source-connect.json
                                 curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d@hdfs-sink-connect.json
                         
+        - Airflow : We need create user to login web-ui airflow docker exec -it airflow-webserver bash
+                        + airflow users create --username admin --firstname Admin --lastname User --role Admin --email youremail@gmail.com
+                        + Password: your password
+        
+        - Spark: we need go to bash of spark-master to run code in scripts directory
+                docker exec -it spark-master bash
+                + fisrt need to add PATH environments of spark-submit: export PATH=$PATH:/opt/spark/bin
+                + next we need copy file .jar in directory spark-packages in spark to connect mongodb
+                        docker cp "your path file .jar" spark-master:/opt/spark/jars/

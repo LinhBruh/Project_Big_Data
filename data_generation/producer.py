@@ -38,9 +38,9 @@ def chunk_list(data, size):   #Because I create list data so need to create a fu
         yield data[i:i + size]
 
 
-number_customers = 1000
-number_products = 500
-number_orders = 25_000_000
+number_customers = 100000
+number_products = 50000
+number_orders = 10_000_000
 number_employees = 1000
 
 
@@ -75,5 +75,5 @@ if __name__ == "__main__":
         send_message_to_kafka("employees",employees)
 
         #divide order follow batch size (void to Kafka fault for overload)
-        # batch_sizes = [1000] * (number_orders // 1000)
-        # p.map(send_orders, batch_sizes)
+        batch_sizes = [1000] * (number_orders // 1000)
+        p.map(send_orders, batch_sizes)

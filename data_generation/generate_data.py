@@ -18,8 +18,7 @@ def random_date():
 
 def customers_gen():
     customer = {
-        "_id": str(uuid.uuid4()),
-        "customer_id" : str(ObjectId()),
+        "_id": str(ObjectId()),
         "customer_name" : fake.name() if random.random() > 0.1 else None,
         "email" : fake.email() if random.random() > 0.2 else None,
         "phone_number" : fake.phone_number() if random.random() > 0.2 else None,
@@ -28,7 +27,7 @@ def customers_gen():
             "city" : fake.city() if random.random() > 0.1 else None,
             "zip_code": fake.zipcode() if random.random() > 0.1 else None
             },
-         "create_at" : random_date().strftime("%Y-%m-%d %H:%M:%S")
+         "create_at" : random_date()
         }
     if customer["phone_number"] is None and customer["email"] is None:
             customer["phone_number"] = fake.phone_number() 
@@ -38,15 +37,15 @@ def customers_gen():
 
 def categories_gen():
     categories = [
-    {"_id": str(uuid.uuid4()),"category_id": "CAT001", "category_name" : "Fashion", "description" : "Thời trang"},
-    {"_id": str(uuid.uuid4()),"category_id": "CAT002", "category_name": "Electronics", "description": "Thiết bị điện tử công nghệ"},
-    {"_id": str(uuid.uuid4()),"category_id": "CAT003", "category_name": "Furniture", "description" : "Đồ gia dụng, Nội thất"},
-    {"_id": str(uuid.uuid4()),"category_id": "CAT004", "category_name" : "Beauty", "description" : "Làm đẹp"},
-    {"_id": str(uuid.uuid4()),"category_id": "CAT005", "category_name" : "Sports", "description" : "Thể thao"},
-    {"_id": str(uuid.uuid4()),"category_id": "CAT006", "category_name" : "Healths", "description" : "Sức khỏe"},
-    {"_id": str(uuid.uuid4()),"category_id": "CAT007", "category_name" : "Appliances", "description" : "Thiết bị trong nhà"},
-    {"_id": str(uuid.uuid4()),"category_id": "CAT008", "category_name" : "Toys", "description" : "Đồ chơi"},
-    {"_id": str(uuid.uuid4()),"category_id": "CAT009", "category_name" : "Books", "description" : "Sách"}
+    {"_id": str(ObjectId()), "category_name" : "Fashion", "description" : "Thời trang"},
+    {"_id": str(ObjectId()), "category_name": "Electronics", "description": "Thiết bị điện tử công nghệ"},
+    {"_id": str(ObjectId()), "category_name": "Furniture", "description" : "Đồ gia dụng, Nội thất"},
+    {"_id": str(ObjectId()), "category_name" : "Beauty", "description" : "Làm đẹp"},
+    {"_id": str(ObjectId()), "category_name" : "Sports", "description" : "Thể thao"},
+    {"_id": str(ObjectId()), "category_name" : "Healths", "description" : "Sức khỏe"},
+    {"_id": str(ObjectId()), "category_name" : "Appliances", "description" : "Thiết bị trong nhà"},
+    {"_id": str(ObjectId()), "category_name" : "Toys", "description" : "Đồ chơi"},
+    {"_id": str(ObjectId()), "category_name" : "Books", "description" : "Sách"}
     ] 
     return categories
 
@@ -107,11 +106,10 @@ def products_gen(product_categories):
     price = round(random.uniform(*product_categories[category]["prices"]), 2)
     stock_quantity = random.randint(0,500)
     rating = round(random.uniform(1.0,5.0),1)
-    create_at = random_date().strftime("%Y-%m-%d %H:%M:%S")
+    create_at = random_date()
 
     product = {
-                "_id":str(uuid.uuid4()),
-                "product_id" : str(ObjectId()),
+                "_id" : str(ObjectId()),
                 "product_name": product_name,
                 "brand": brand if random.random() > 0.1 else None,
                 "category": category,
@@ -127,8 +125,7 @@ def products_gen(product_categories):
 
 def suppliers_gen(brand):
     supplier={
-            "_id": str(uuid.uuid4()),
-            "supplier_id": str(ObjectId()),
+            "_id": str(ObjectId()),
             "name":brand,
             "contact_person": fake.name(),
             "phone_number": fake.phone_number() if random.random() > 0.2 else None,
@@ -141,10 +138,10 @@ def suppliers_gen(brand):
 def orders_gen(customers,products):
     customer = random.choice(customers)
     product = random.choices(products, k = random.randint(1,10))
-    create_at = random_date().strftime("%Y-%m-%d %H:%m:%S")
+    create_at = random_date()
 
     items = [{
-                "product_id":item["product_id"],
+                "product_id":item["_id"],
                 "product_name":item["product_name"],
                 "quantity": (qty := random.randint(1,10)) ,
                 "price":item["price"],
@@ -152,9 +149,8 @@ def orders_gen(customers,products):
             } for item in product]
     
     order = {
-            "_id":str(uuid.uuid4()),
-            "order_id": str(ObjectId()),
-            "customer_id": customer["customer_id"],
+            "_id": str(ObjectId()),
+            "customer_id": customer["_id"],
             "order_date":create_at,
             "status": random.choice(["Completed","Canceled"]),
             "items": items,
@@ -170,9 +166,8 @@ def orders_gen(customers,products):
 
 def inventory_gen(product):
     inventory={
-            "_id": str(uuid.uuid4()),
-            "inventory_id": str(ObjectId()),
-            "product_id" : product["product_id"],
+            "_id": str(ObjectId()),
+            "product_id" : product["_id"],
             "quantity_available": random.randint(1,1000),
             "last_updated": random_date()
         }
@@ -193,13 +188,12 @@ def employees_gen():
     departments = random.choice(list(positions.keys()))
 
     employee={
-            "_id": str(uuid.uuid4()),
-            "employee_id": str(ObjectId()),
+            "_id": str(ObjectId()),
             "employee_name": fake.name(),
             "postition": random.choice([positions[departments]]),
             "email": fake.email(),
             "phone_number": fake.phone_number(),
-            "hired_date": random_date().strftime("%Y-%m-%d %H:%S")   
+            "hired_date": random_date()
         }
     
     return employee
