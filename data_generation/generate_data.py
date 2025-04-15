@@ -16,15 +16,18 @@ def random_date():
 
     return start_date + timedelta(seconds=random_seconds)
 
+city =["Ha Noi","Ninh Binh","TP.HCM","Hai Phong","Da Nang","Nha Trang"]
+
 def customers_gen():
     customer = {
         "_id": str(ObjectId()),
         "customer_name" : fake.name() if random.random() > 0.1 else None,
         "email" : fake.email() if random.random() > 0.2 else None,
         "phone_number" : fake.phone_number() if random.random() > 0.2 else None,
+        "sex": random.choice(["Male","Female"]),
         "address" : {
             "street": fake.street_address() if random.random() > 0.15 else None,
-            "city" : fake.city() if random.random() > 0.1 else None,
+            "city" : random.choice(city) if random.random() > 0.1 else None,
             "zip_code": fake.zipcode() if random.random() > 0.1 else None
             },
          "create_at" : random_date()
@@ -137,24 +140,19 @@ def suppliers_gen(brand):
 
 def orders_gen(customers,products):
     customer = random.choice(customers)
-    product = random.choices(products, k = random.randint(1,10))
+    product = random.choice(products)
     create_at = random_date()
-
-    items = [{
-                "product_id":item["_id"],
-                "product_name":item["product_name"],
-                "quantity": (qty := random.randint(1,10)) ,
-                "price":item["price"],
-                "total_price": qty*item["price"] if item["price"] is not None else 0
-            } for item in product]
-    
+           
     order = {
             "_id": str(ObjectId()),
             "customer_id": customer["_id"],
             "order_date":create_at,
             "status": random.choice(["Completed","Canceled"]),
-            "items": items,
-            "total_amount": sum(item["total_price"] for item in items) if random.random() > 0.1 else None,
+            "product_id":product["_id"],
+            "product_name":product["product_name"],
+            "quantity": (qty := random.randint(1,10)) ,
+            "price":product["price"],
+            "total_price": qty*product["price"] if product["price"] is not None else 0,
             "payment_method": random.choice(["Credit Card","Debit Cart","Cash","E-wallets","PayPal","Bank Card"]) if random.random() > 0.1 else None,
             "method": random.choice(["Expess","Buy in store"]) if random.random() > 0.2 else None, 
             "delivery_date": create_at if random.random() > 0.1 else None

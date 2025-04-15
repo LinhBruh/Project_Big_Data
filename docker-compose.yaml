@@ -77,7 +77,6 @@ services:
     networks:
       - bigdata_network
 
-
   # ------------------ MONGODB ------------------
   mongodb:
     image: mongo:latest
@@ -116,12 +115,13 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092,PLAINTEXT_HOST://host.docker.internal:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092,PLAINTEXT_HOST://localhost:9093
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
     networks:
       - bigdata_network
+
   kafka2:
     image: confluentinc/cp-kafka:latest
     container_name: kafka2
@@ -134,12 +134,11 @@ services:
       - KAFKA_BROKER_ID=2
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=2
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka2:9094,PLAINTEXT_HOST://host.docker.internal:9095
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka2:9094,PLAINTEXT_HOST://localhost:9095
       - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9094,PLAINTEXT_HOST://0.0.0.0:9095
       - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
       - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
-
     networks:
       - bigdata_network
 
@@ -170,6 +169,7 @@ services:
     environment:
       - SPARK_MODE=master
       - SPARK_MASTER_HOST=spark-master
+      - SPARK_LOCAL_DIRS=/tmp/spark-temp
     ports:
       - "8081:8081"
       - "7077:7077"
@@ -177,7 +177,8 @@ services:
       - bigdata_network
     volumes:
       - ./scripts:/opt/spark-apps
-  
+      - ./spark-data/spark_temp_master:/tmp/spark-temp
+
   spark-worker-1:
     build: 
       context: .
@@ -192,13 +193,14 @@ services:
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_HOST=spark-master
-      - SPARK_WORKER_MEMORY=4G
-      - SPARK_WORKER_CORES=2
-      - SPARK_LOCAL_DIRS=/tmp/spark-disk
-    volumes:
-      - ./spark-data-worker/spark-worker1-data:/tmp/spark-disk
+      - SPARK_WORKER_MEMORY=3G
+      - SPARK_WORKER_CORES=1
+      - SPARK_LOCAL_DIRS=/tmp/spark-temp
+      - SPARK_WORKER_OPTS=-Djava.io.tmpdir=/tmp/spark-temp
     networks:
       - bigdata_network
+    volumes:
+      - ./spark-data/spark_temp_worker1:/tmp/spark-temp
 
   spark-worker-2:
     build: 
@@ -210,15 +212,16 @@ services:
       - spark-master
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     environment:
-      - SPARK_WORKER_MEMORY=4G
-      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=3G
+      - SPARK_WORKER_CORES=1
       - SPARK_MODE=worker
       - SPARK_MASTER_HOST=spark-master
-      - SPARK_LOCAL_DIRS=/tmp/spark-disk
-    volumes:
-      - ./spark-data-worker/spark-worker2-data:/tmp/spark-disk
+      - SPARK_LOCAL_DIRS=/tmp/spark-temp
+      - SPARK_WORKER_OPTS=-Djava.io.tmpdir=/tmp/spark-temp
     networks:
       - bigdata_network
+    volumes:
+      - ./spark-data/spark_temp_worker2:/tmp/spark-temp
     
   spark-worker-3:
     build: 
@@ -230,17 +233,18 @@ services:
       - spark-master
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     environment:
-      - SPARK_WORKER_MEMORY=4G
-      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=3G
+      - SPARK_WORKER_CORES=1
       - SPARK_MODE=worker
       - SPARK_MASTER_HOST=spark-master
-      - SPARK_LOCAL_DIRS=/tmp/spark-disk
-    volumes:
-      - ./spark-data-worker/spark-worker3-data:/tmp/spark-disk
+      - SPARK_LOCAL_DIRS=/tmp/spark-temp
+      - SPARK_WORKER_OPTS=-Djava.io.tmpdir=/tmp/spark-temp
     networks:
       - bigdata_network
+    volumes:
+      - ./spark-data/spark_temp_worker3:/tmp/spark-temp
     
-#------------AIRFLOW--------------------
+  #------------AIRFLOW--------------------
   airflow-postgres:
     image: postgres:13
     container_name: airflow-postgres
@@ -263,9 +267,9 @@ services:
     ports:
       - "8085:8085"
     volumes:
-    - ./dags:/opt/airflow/dags
-    - ./logs:/opt/airflow/logs
-    - ./plugins:/opt/airflow/plugins
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
     depends_on:
       - airflow-postgres
     networks:
@@ -282,13 +286,25 @@ services:
     depends_on:
       - airflow-postgres
     volumes:
-    - ./dags:/opt/airflow/dags
-    - ./logs:/opt/airflow/logs
-    - ./plugins:/opt/airflow/plugins
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
     networks:
       - bigdata_network
     command: scheduler
-
+  #------------POSTGRESQL------------------------
+  postgresql:
+    image: postgres:latest
+    container_name: postgresql
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    networks:
+      - bigdata_network
 
 
 volumes:
@@ -299,6 +315,7 @@ volumes:
   hadoop_historyserver:
   mongodb_data:
   postgres_data:
+  postgresql_data:
 
 networks:
   bigdata_network:

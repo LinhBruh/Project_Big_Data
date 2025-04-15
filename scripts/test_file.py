@@ -1,21 +1,59 @@
 from pyspark.sql import SparkSession
+import pyspark.sql.functions as func
+from pyspark.sql.types import StringType
+from pyspark.sql.window import Window
 
+# Tạo SparkSession
 spark = SparkSession.builder \
-    .appName("MongoTest") \
-    .master("spark://spark-master:7077") \
-    .config("spark.jars", ",".join([
-        "/opt/spark/jars/mongo-spark-connector_2.12-10.4.1.jar",
-        "/opt/spark/jars/mongodb-driver-sync-4.11.1.jar",
-        "/opt/spark/jars/mongodb-driver-core-4.11.1.jar",
-        "/opt/spark/jars/bson-4.11.1.jar"
-    ])) \
-    .config("spark.mongodb.read.connection.uri", "mongodb://admin:password@mongodb:27017") \
-    .config("spark.mongodb.read.database", "sales_db") \
+    .appName("Local Word Count") \
+    .master("local[*]") \
     .getOrCreate()
 
-df = spark.read.format("mongodb") \
-    .option("spark.mongodb.read.collection", "customers") \
-    .load()
+collections = ["inventory"]
+# Load dữ liệu (có thể là file text)
+def read_parquet(col):
 
-print(df.head(5))
-spark.stop()
+    df = spark.read.parquet(f"hdfs://localhost:9000/data/sales_db/{col}")
+    print(df.count())
+    return df
+
+
+def fill_null_customer_name(val):
+    return val if val is not None else "John Doe"
+
+
+def fill_null_email(val):
+    return val if val is not None else "johndoe@gmail.com"
+
+def fill_null_phone(val):
+    return val if val is not None else "0123456789"
+
+
+column_fill_func_customers ={
+    "customer_name":fill_null_customer_name,
+    "email":fill_null_email,
+    "phone_number":fill_null_phone,
+}
+def transform_data():
+
+    for col in  collections:
+        print(f"Begin with collection {col}")
+        df = read_parquet(col)
+        df.repartition(3)
+        if col == "products":
+            window = Window.partitionBy("category")
+            print(window)
+            df = df.withColumn(
+                "brand",
+                func.when(
+                    func.col("brand").isNull(),"No Brand").otherwise(func.col("brand").alias("brand"))
+                ) \
+                .withColumn("avg_price_by_category", func.avg("price").over(window)) \
+                .withColumn(
+                    "price",
+                    func.when(func.col("price").isNull(),func.col("avg_price_by_category")).otherwise(func.col("price"))
+                    )
+                
+        df.show(5)
+df = read_parquet("inventory")
+df.show(5)

@@ -39,8 +39,8 @@ def chunk_list(data, size):   #Because I create list data so need to create a fu
 
 
 number_customers = 100000
-number_products = 50000
-number_orders = 10_000_000
+number_products = 2000
+number_orders = 5_000_000
 number_employees = 1000
 
 
