@@ -6,7 +6,7 @@ CREATE TABLE dim_customers(
 	phone_number VARCHAR(30) NOT NULL,
 	email VARCHAR(50) NOT NULL,
 	city VARCHAR(30) NOT NULL,
-	created_at DATE NOT NULL,
+	create_at DATE NOT NULL,
 	end_date DATE DEFAULT NOW()
 );
 
@@ -14,7 +14,7 @@ CREATE TABLE dim_products(
 	product_key SERIAL PRIMARY KEY,
 	product_id VARCHAR(50) NOT NULL,
 	product_name VARCHAR(100) NOT NULL,
-	rating DECIMAL(2,2) NOT NULL,
+	rating DECIMAL(4,2) NOT NULL,
 	quantity INT NOT NULL,
 	price DECIMAL(10,2) NOT NULL,
 	brand VARCHAR(50) NOT NULL,
@@ -47,38 +47,27 @@ CREATE TABLE dim_date(
 	holiday_name VARCHAR(50)
 );
 
-CREATE TABLE dim_payments(
-	payment_key SERIAL PRIMARY KEY,
-	payment_name VARCHAR(20) NOT NULL
-);
-
-CREATE TABLE dim_methods(
-	method_key SERIAL PRIMARY KEY,
-	method_name VARCHAR(20) NOT NULL
-);
-
 CREATE TABLE fact_orders(
 	order_key BIGSERIAL PRIMARY KEY,
 	order_id VARCHAR(50) NOT NULL,
 	customer_key INT NOT NULL,
 	product_key INT NOT NULL,
 	category_key INT NOT NULL,
-	order_date_key INT NOT NULL,
+	date_key INT NOT NULL,
 	quantity INT NOT NULL,
-	total_price DECIMAL(12,2) NOT NULL,
-	payment_key INT NOT NULL,
-	method_key  INT NOT NULL,
+	total_price DECIMAL(15,2) NOT NULL,
+	method VARCHAR(20) NOT NULL,
+	payment_method VARCHAR(20) NOT NULL,
+	status VARCHAR(20) NOT NULL,
 	create_at DATE DEFAULT NOW(),
-	update_at DATE DEFAULT NOW()
+	end_date DATE DEFAULT NOW()
 );
 
 ALTER TABLE fact_orders
 ADD FOREIGN KEY (customer_key) REFERENCES dim_customers(customer_key),
 ADD FOREIGN KEY (product_key) REFERENCES dim_products(product_key),
 ADD FOREIGN KEY (category_key) REFERENCES dim_categories(category_key),
-ADD FOREIGN KEY (order_date_key) REFERENCES dim_date(date_key),
-ADD FOREIGN KEY (payment_key) REFERENCES dim_payments(payment_key),
-ADD FOREIGN KEY (method_key) REFERENCES dim_methods(method_key);
+ADD FOREIGN KEY (date_key) REFERENCES dim_date(date_key);
 
 	
 	
