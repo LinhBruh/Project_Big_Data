@@ -17,7 +17,7 @@ SELECT
     NULL AS holiday_name  -- Can be updated later
 FROM 
     generate_series(
-        '2017-01-01'::date, 
+        '2016-01-01'::date, 
         '2025-12-31'::date, 
         '1 day'::interval
     ) AS date;

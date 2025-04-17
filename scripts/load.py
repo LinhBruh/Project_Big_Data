@@ -128,6 +128,7 @@ def load_fact(df_product):
 
         df = df.select("order_id","category_key","product_key","customer_key","date_key","method","payment_method","total_price","quantity","status","order_date")
         df = df.withColumnRenamed("order_date","create_at").withColumn("date_key",func.col("date_key").cast("int"))
+        df = df.na.drop()
 
         df.write.format("jdbc")\
                 .option("url","jdbc:postgresql://postgresql:5432/dw_sales")\
@@ -138,6 +139,6 @@ def load_fact(df_product):
                 .mode("append")\
                 .save()
     
-# load_dimension(df_product,df_customer)
+load_dimension(df_product,df_customer)
 load_fact(df_product)
 
